@@ -1,0 +1,130 @@
+Common Features
+These features are available to all roles to ensure secure access, data segregation, and system-wide functionality.
+S.No.	Feature	Description
+1	User Authentication	Login with email (e.g., alice@hotel42.com) and password (bcrypt hashing), JWT access token (1-hour expiry), refresh token (~1-month sessions), RBAC with JSONB feature toggles
+2	Data Segregation	Restrict data access by hotel_id and branch_id using query-level filters
+3	Audit Logging	Log sensitive operations (e.g., user creation, order updates) with user_id, action, timestamp, details in audit_logs table
+4	Real-Time Notifications	WebSocket-based alerts for issues, escalations, updates (e.g., /ws/notifications/{branch_id})
+5	API Access	Access REST APIs via HTTPS through Nginx load balancer
+6	Database Interaction	Single PostgreSQL schema with indexed tables (hotel_id, branch_id, role_id, email) using SQLAlchemy async
+7	System Configuration	Access system settings (e.g., tax profiles, policies) based on role permissions
+________________________________________
+Role-Specific Features
+1. Product Admin (Company Level)
+Manages the entire platform, including hotel onboarding, feature toggles, and comprehensive analytics.
+S.No.	Feature	Description
+1	Hotel Onboarding/Offboarding	Create/delete hotels after payment verification, collecting details like owner name, hotel name, branch details, GST, location, etc. Assign hotel_id and branch_id in backend (/hotels)
+2	Super Admin Credential Creation	Generate super admin credentials (e.g., superadmin@hotel.com, password: hotelsuperadmin123#) and share with hotel owner after onboarding (/super-admins)
+3	Feature Toggle Management	Control panel to toggle all features for super admins based on subscription package, enabling/disabling features (e.g., analytics, social media) for customization (/feature-toggles)
+4	Master Control Panel	Comprehensive dashboard with real-time stats: number of hotels, branches created, subscription payments, dues, new hotel requests, onboarding history, max branches per hotel (/dashboard/company)
+5	Company-Wide Policies	Manage platform-wide policies, tax profiles, subscription plans (/policies, /settings)
+6	Company Analytics	View aggregated reports (total hotels, branches, subscriptions, onboarding trends) without access to individual hotel sales data (/reports/company)
+7	Audit Log Access	View all audit logs across hotels for traceability (/audit-logs)
+8	System Configuration	Manage global settings (e.g., platform-wide tax rates, subscription tiers) (/settings/global)
+9	Hotel/Branch Management	Update/delete hotels or branches, send subscription expiration messages (/hotels, /branches, /messages)
+10	New Hotel Request Management	Approve/reject new hotel onboarding requests (/hotels/requests)
+________________________________________
+2. Super Admin (Hotel Owner Level)
+Manages owned hotels, branches, and hotel-level operations after receiving credentials from Product Admin.
+S.No.	Feature	Description
+1	Hotel Management	CRUD operations for owned hotels, providing details like bank details, GST, government certificates (/hotels/{hotel_id})
+2	Branch Management	Request Product Admin to create/delete branches, provide branch-specific details (location, GST, bank details) for unique branch identity (/branches)
+3	Admin/Manager Credential Creation	Create admin (e.g., admin-name@hotel.com) and manager (e.g., manager-name@hotel.com) credentials, assign to specific branches/zones (/staff, /roles)
+4	Feature Toggle Control	Control panel to toggle permissions for admins and managers (e.g., menu updates, staff scheduling) or assign all manager duties to admin if no manager exists (/permissions/{branch_id})
+5	Hotel Dashboard	Detailed dashboard with branch-wise stats: sales, profit/loss, customer counts, popular items, table occupancy, crowded sections/halls/tables, inventory analytics (/dashboard/hotel)
+6	Facility Management	Manage facilities (floors, halls, tables) across branches (/facilities)
+7	Menu Management	CRUD operations for menus, pricing, modifiers for each branch (/menu)
+8	Staff Management	Create/delete staff, assign roles/zones (e.g., one admin per branch, optional managers) (/staff/{branch_id}, /roles/{branch_id})
+9	Hotel Analytics	View hotel-level reports with detailed filters (revenue, bookings, item sales, occupancy by branch/section) (/reports/hotel)
+10	Settings Management	Configure hotel-specific settings (tax profiles, pricing rules) (/settings/hotel)
+11	Social Media Integration	Manage hotel social media profiles for marketing (/social-media)
+________________________________________
+
+
+
+
+3. Admin (Branch Administrator)
+Manages a specific branch’s operations, staff, and optionally manager duties.
+S.No.	Feature	Description
+1	Branch Login	Login with credentials (e.g., admin-name@hotel.com) assigned by Super Admin, tied to hotel_id, branch_id, role_id in DB, validated via JWT (/login)
+2	Manager Credential Creation	Create manager credentials (e.g., manager-name@hotel.com) if not created by Super Admin, assign to zones (/staff/{branch_id}, /roles/{branch_id})
+3	Branch Facility Management	CRUD operations for branch facilities (floors, halls, tables) (/facilities/{branch_id})
+4	Branch Menu Management	CRUD operations for branch menus, pricing, modifiers, images (/menu/{branch_id})
+5	Staff Management	Manage branch staff (waiters, cooks, assistants, cashiers, cleaners), assign roles/zones (/staff/{branch_id}, /roles/{branch_id})
+6	Shift Management	Manage staff shifts (all staff types) or delegate to managers if present (/staff/schedule/{branch_id})
+7	Inventory Management	Check inventory, note requirements, order stock (/inventory/requests)
+8	Financial Management	Handle branch finances (e.g., salary payments) if permitted by Super Admin (/finances/{branch_id})
+9	Order Routing	Route orders to kitchen, coordinate with managers if present (/orders/routing)
+10	Branch Analytics	View branch-level reports (sales, occupancy, inventory usage) (/reports/branch)
+11	Billing Policies	Configure branch-specific billing rules (e.g., discounts, taxes) (/billing-policies/{branch_id})
+12	Manager Oversight	Supervise managers, request reports, or perform manager duties (e.g., staff scheduling, zone management) if no manager exists (/zones/{branch_id})
+13	Branch Dashboard	Control panel with toggles for feature permissions and dashboard for branch stats (sales, staff performance, occupancy) (/dashboard/branch)
+________________________________________
+4. Manager (Zone Supervisor)
+Oversees specific zones (e.g., floors, halls) within a branch, with optional duties based on Super Admin/Admin toggles.
+S.No.	Feature	Description
+1	Zone Management	Manage assigned zones (floors, halls, sections, tables) within a branch (/zones/{branch_id})
+2	Reservation Management	Handle reservations for assigned zones (e.g., table bookings) (/reservations/{zone_id})
+3	Staff Scheduling	Schedule staff (waiters, cleaners) for zones if permitted by Super Admin/Admin (/staff/schedule/{zone_id})
+4	Table Status Updates	Update table statuses (Occupied, Free) via WebSocket (/ws/table-status/{branch_id})
+5	Order Routing	Route orders to kitchen if permitted (/orders/routing)
+6	Staff Oversight	Monitor staff performance (waiters, cleaners) in assigned zones (/staff/{zone_id})
+7	Zone Reports	View zone-specific reports (occupancy, orders, staff performance) (/reports/zone)
+8	Issue Escalation	Escalate issues to Admin or Super Admin (/issues/escalate)
+9	Zone Dashboard	Dashboard with toggles for permitted features and stats (zone occupancy, staff activity) (/dashboard/zone)
+________________________________________
+5. Cashier (Financial Operations)
+Handles financial transactions in assigned zones, with duties transferable to Manager if role doesn’t exist.
+S.No.	Feature	Description
+1	Bill Generation	Generate bills for orders in assigned zones, including details like order items, taxes, and totals (/bills)
+2	Payment Processing	Process payments via cash, card, UPI, or desk cash (post-dining) using Razorpay integration (/payments/create, /payments/verify)
+3	Refund Management	Process refunds for orders, logging actions in audit_logs table for traceability (/refunds)
+4	Transaction Logs	View transaction history for assigned zones, including payment types and statuses (/transactions/{zone_id})
+5	Financial Oversight	Handle all financial operations (e.g., daily cash reconciliation) if permitted by Admin/Super Admin; duties revert to Manager if no Cashier exists (/finances/{zone_id})
+________________________________________
+6. Kitchen Staff (Food Preparation)
+Manages order preparation in the kitchen.
+S.No.	Feature	Description
+1	Order Management	Receive orders, accept/decline/transfer orders if permitted, update statuses (Accepted, Preparing, Delayed, On the Way) (/orders/{order_id})
+2	Preparation Notes	Add preparation notes to orders (e.g., special requests, ingredient substitutions) (/orders/{order_id}/notes)
+3	Order Notifications	Receive real-time order updates via WebSocket (e.g., new orders, special requests) (/ws/orders/{branch_id})
+4	Waiter Coordination	Notify waiters to pick up specific orders when ready, based on order type and table (/orders/{order_id}/notify)
+________________________________________7. Waiters/Service Staff (Customer Service)
+Handles customer interactions and order placement.
+S.No.	Feature	Description
+1	Order Placement	Take customer orders (if not via customer app), input details (menu items, table number, number of people, special requests), and submit to kitchen (/orders)
+2	Table Status Updates	Update table statuses (e.g., Occupied, Free, Dirty) via WebSocket (/ws/table-status/{branch_id})
+3	Special Requests	Communicate customer special requests to kitchen (e.g., dietary restrictions) (/orders/{order_id}/requests)
+4	Order Pickup	Receive notifications from kitchen when orders are ready, pick up orders, and deliver to tables (/orders/{order_id}/pickup)
+________________________________________
+8. Inventory Manager/Storekeeper
+Manages stock and procurement for the branch.
+S.No.	Feature	Description
+1	Stock Management	Track inventory levels, update stock quantities, and monitor usage (/inventory)
+2	Purchase Orders	Create and process purchase orders for restocking inventory (/purchase-orders)
+3	Stock Alerts	Set and view reorder alerts for low stock levels (/inventory/alerts)
+4	Inventory Updates	Receive real-time low-stock notifications via WebSocket (/ws/inventory/low-stock)
+________________________________________
+9. Housekeeping/Maintenance
+Maintains facilities and logs maintenance activities.
+S.No.	Feature	Description
+1	Facility Status Updates	Update facility statuses (e.g., Clean, Dirty, Under Maintenance) for tables, floors, or kitchens based on waiter status updates (e.g., Table 7: Dirty) (/facility-status)
+2	Maintenance Logging	Log maintenance activities (e.g., table cleaning, kitchen maintenance) (/maintenance-logs)
+3	Status Notifications	Receive real-time facility status updates via WebSocket (e.g., branch1.section1.hall1.table6: Finished) to trigger cleaning (/ws/facility-status/{branch_id})
+4	Specialized Cleaning	Perform cleaning tasks based on role (e.g., table cleaners, floor cleaners, kitchen cleaners), directed by Admin/Manager, not waiters (/facility-status/{type})
+________________________________________
+Future Features (Phase 2)
+Planned enhancements to improve performance and functionality.
+S.No.	Feature	Description
+1	Redis Caching	Cache menu items, table statuses for performance
+2	RabbitMQ Message Queue	Async processing for order notifications, inventory updates
+3	Analytics Integration	Connect to Google Analytics, Mixpanel, or webhooks (/analytics)
+________________________________________
+Notes
+•	Common Features: Ensure secure access (JWT, RBAC), data segregation (hotel_id, branch_id), and real-time notifications (WebSocket) for all roles.
+•	Role-Specific Features: Tailored to the nine roles’ authorities, with endpoints reflecting FastAPI routes (e.g., /hotels, /orders) and WebSocket routes. Product Admin has full control except for hotel sales data. Super Admin and Admin have control panels with feature toggles. Managers, Cashiers, and others are optional, with duties transferable (e.g., Cashier to Manager, Manager to Admin).
+•	Scalability: Supports 500–1,000 hotels and 100,000+ users with indexed PostgreSQL tables (hotel_id, branch_id) and async FastAPI/SQLAlchemy.
+•	Security: Audit logging and RBAC with JSONB toggles ensure traceability and access control. Product Admin toggles features for customization.
+•	Real-Time: WebSocket endpoints (e.g., /ws/table-status/{branch_id}, /ws/orders/{branch_id}) prioritize speed for table status, order updates, and inventory alerts.
+•	Integrations: Razorpay for payments (/payments/create), with placeholders for future analytics.
+

@@ -1,0 +1,280 @@
+Table users {
+  user_id BIGSERIAL [pk]
+  email VARCHAR(255) [unique, not null]
+  password_hash VARCHAR(255) [not null]
+  role_id BIGINT [not null]
+  hotel_id BIGINT
+  branch_id BIGINT
+  created_by BIGINT
+  first_name VARCHAR(100) [not null]
+  last_name VARCHAR(100)
+  phone VARCHAR(20)
+  last_login TIMESTAMPTZ
+  is_active BOOLEAN [default: true]
+  created_at TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+  updated_at TIMESTAMPTZ
+
+  indexes {
+    (email) [unique]
+    (hotel_id)
+    (branch_id)
+    (role_id)
+  }
+}
+
+Table roles {
+  role_id BIGSERIAL [pk]
+  role_name VARCHAR(50) [unique, not null]
+  feature_toggles JSONB [not null, default: '{}']
+  description TEXT
+  hierarchy_level INTEGER [not null]
+
+  indexes {
+    (role_name) [unique]
+    (feature_toggles) [type: gin]
+  }
+}
+
+Table hotels {
+  hotel_id BIGSERIAL [pk]
+  name VARCHAR(255) [not null]
+  owner_name VARCHAR(255) [not null]
+  gst_number VARCHAR(50)
+  location TEXT
+  subscription_status VARCHAR(50) [not null, default: 'pending']
+  subscription_expiry TIMESTAMPTZ
+  bank_details JSONB
+  is_active BOOLEAN [default: true]
+
+  indexes {
+    (hotel_id)
+    (bank_details) [type: gin]
+  }
+}
+
+Table branches {
+  branch_id BIGSERIAL [pk]
+  hotel_id BIGINT [not null]
+  name VARCHAR(255) [not null]
+  location TEXT
+  gst_number VARCHAR(50)
+  bank_details JSONB
+  is_active BOOLEAN [default: true]
+
+  indexes {
+    (hotel_id)
+    (bank_details) [type: gin]
+  }
+}
+
+Table facilities {
+  facility_id BIGSERIAL [pk]
+  branch_id BIGINT [not null]
+  name VARCHAR(255) [not null]
+  type VARCHAR(50)  // e.g., floor, hall, table, kitchen
+  status VARCHAR(50)
+  is_active BOOLEAN [default: true]
+
+  indexes {
+    (branch_id)
+  }
+}
+
+Table staff {
+  staff_id BIGSERIAL [pk]
+  user_id BIGINT [not null]
+  branch_id BIGINT [not null]
+  role_id BIGINT [not null]
+  zone_id BIGINT  // optional
+  first_name VARCHAR(100)
+  last_name VARCHAR(100)
+  phone VARCHAR(20)
+  is_active BOOLEAN [default: true]
+  created_at TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+  updated_at TIMESTAMPTZ
+
+  indexes {
+    (user_id)
+    (branch_id)
+    (role_id)
+    (zone_id)
+  }
+}
+
+Table zones {
+  zone_id BIGSERIAL [pk]
+  branch_id BIGINT [not null]
+  name VARCHAR(255) [not null]
+  description TEXT
+  is_active BOOLEAN [default: true]
+
+  indexes {
+    (branch_id)
+  }
+}
+
+Table menus {
+  menu_id BIGSERIAL [pk]
+  branch_id BIGINT [not null]
+  name VARCHAR(255) [not null]
+  description TEXT
+  is_active BOOLEAN [default: true]
+  created_at TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+  updated_at TIMESTAMPTZ
+
+  indexes {
+    (branch_id)
+  }
+}
+
+Table menu_items {
+  item_id BIGSERIAL [pk]
+  menu_id BIGINT [not null]
+  name VARCHAR(255) [not null]
+  description TEXT
+  price NUMERIC(10,2) [not null]
+  is_active BOOLEAN [default: true]
+
+  indexes {
+    (menu_id)
+  }
+}
+
+Table orders {
+  order_id BIGSERIAL [pk]
+  branch_id BIGINT [not null]
+  table_id BIGINT
+  staff_id BIGINT
+  status VARCHAR(50) [not null]
+  total_amount NUMERIC(12,2)
+  created_at TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+  updated_at TIMESTAMPTZ
+
+  indexes {
+    (branch_id)
+    (staff_id)
+  }
+}
+
+Table order_items {
+  order_item_id BIGSERIAL [pk]
+  order_id BIGINT [not null]
+  item_id BIGINT [not null]
+  quantity INTEGER [not null]
+  price NUMERIC(10,2) [not null]
+}
+
+Table reservations {
+  reservation_id BIGSERIAL [pk]
+  zone_id BIGINT [not null]
+  customer_name VARCHAR(255)
+  reservation_time TIMESTAMPTZ [not null]
+  number_of_people INTEGER
+  special_requests TEXT
+  created_at TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (zone_id)
+  }
+}
+
+Table payments {
+  payment_id BIGSERIAL [pk]
+  order_id BIGINT [not null]
+  amount NUMERIC(12,2) [not null]
+  payment_method VARCHAR(50)
+  payment_status VARCHAR(50) [not null]
+  transaction_id VARCHAR(255)
+  created_at TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (order_id)
+  }
+}
+
+Table refunds {
+  refund_id BIGSERIAL [pk]
+  payment_id BIGINT [not null]
+  amount NUMERIC(12,2) [not null]
+  refund_reason TEXT
+  created_at TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+}
+
+Table inventory_items {
+  inventory_item_id BIGSERIAL [pk]
+  branch_id BIGINT [not null]
+  name VARCHAR(255) [not null]
+  quantity INTEGER [not null]
+  reorder_level INTEGER
+  last_updated TIMESTAMPTZ
+
+  indexes {
+    (branch_id)
+  }
+}
+
+Table purchase_orders {
+  purchase_order_id BIGSERIAL [pk]
+  branch_id BIGINT [not null]
+  supplier_name VARCHAR(255)
+  order_date TIMESTAMPTZ [not null]
+  status VARCHAR(50)
+  created_at TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (branch_id)
+  }
+}
+
+Table maintenance_logs {
+  maintenance_log_id BIGSERIAL [pk]
+  branch_id BIGINT [not null]
+  description TEXT
+  status VARCHAR(50)
+  logged_at TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+}
+
+Table audit_logs {
+  log_id BIGSERIAL [pk]
+  user_id BIGINT [not null]
+  hotel_id BIGINT
+  branch_id BIGINT
+  action VARCHAR(100) [not null]
+  details JSONB [not null]
+  ip_address VARCHAR(45)
+  status VARCHAR(50) [not null]
+  timestamp TIMESTAMPTZ [default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (user_id)
+    (hotel_id)
+    (branch_id)
+    (timestamp)
+    (details) [type: gin]
+  }
+}
+
+Ref: users.role_id > roles.role_id
+Ref: users.hotel_id > hotels.hotel_id
+Ref: users.branch_id > branches.branch_id
+Ref: users.created_by > users.user_id
+Ref: branches.hotel_id > hotels.hotel_id
+Ref: staff.user_id > users.user_id
+Ref: staff.branch_id > branches.branch_id
+Ref: staff.role_id > roles.role_id
+Ref: zones.branch_id > branches.branch_id
+Ref: menus.branch_id > branches.branch_id
+Ref: menu_items.menu_id > menus.menu_id
+Ref: orders.branch_id > branches.branch_id
+Ref: orders.staff_id > staff.staff_id
+Ref: order_items.order_id > orders.order_id
+Ref: order_items.item_id > menu_items.item_id
+Ref: reservations.zone_id > zones.zone_id
+Ref: payments.order_id > orders.order_id
+Ref: refunds.payment_id > payments.payment_id
+Ref: inventory_items.branch_id > branches.branch_id
+Ref: purchase_orders.branch_id > branches.branch_id
+Ref: maintenance_logs.branch_id > branches.branch_id
+Ref: audit_logs.user_id > users.user_id
+Ref: audit_logs.hotel_id > hotels.hotel_id
+Ref: audit_logs.branch_id > branches.branch_id

@@ -1,0 +1,31 @@
+# Requirements generated automatically
+# Generated on: 2025-09-05T00:30:34.645209
+
+# FastAPI and ASGI server
+fastapi==0.116.1
+fastapi-cli==0.0.4
+httpx==0.28.1
+starlette==0.47.2
+uvicorn==0.35.0
+
+# Database
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy>=2.0.16
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+
+# Authentication and Security
+PyJWT==2.10.1
+bcrypt==3.2.0
+passlib==1.7.4
+python-jose==3.3.0
+
+# Utilities and Configuration
+pydantic==2.11.7
+pydantic-settings==2.10.1
+pydantic_core==2.33.2
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+redis==6.4.0
+types-python-dateutil==2.9.0.20241206
+

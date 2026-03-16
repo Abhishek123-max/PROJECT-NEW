@@ -1,0 +1,50 @@
+# Python
+
+# Byte-code files
+*.pyc
+__pycache__/
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# C extensions
+*.so
+*.dll
+*.dylib
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+.Trashes
+thumbs.db
+
+# Testing
+.pytest_cache/
+
+# My custom additions
+get_token.py
+.env.*
+HotelAgent.postman_collection.json
+postman.md
+
+app\core\dummy.py
+app\core\dummy2.py
+app\core\dummy3.py

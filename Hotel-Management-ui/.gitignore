@@ -1,0 +1,19 @@
+node_modules/
+.next/
+out/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env files
+.env
+.env.*.local
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp

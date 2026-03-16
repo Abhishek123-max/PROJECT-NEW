@@ -1,0 +1,79 @@
+A) General Standards and Rules
+1.	Authentication and Authorization
+o	All APIs require an Authorization: Bearer <your_access_token> header, validated via JWT to ensure only authorized users (e.g., Super Admin, Product Admin) can perform actions.
+o	Permissions are enforced using Role-Based Access Control (RBAC), with roles defined in the roles table and checked against JWT claims (role_id, hotel_id, branch_id).
+o	Validation of user roles (e.g., Super Admin for branch/floor management) is mandatory before processing requests.
+2.	Request and Response Standards
+o	All POST and PUT requests require Content-Type: application/json.
+o	Successful creation returns HTTP 201 Created with the full resource object; updates return 200 OK; retrievals return 200 OK; deletions return 200 OK with a success message.
+o	Error responses (e.g., 400 Bad Request, 404 Not Found) include descriptive messages (e.g., "Invalid branch_id") for debugging.
+o	All responses are in JSON format, ensuring consistency across endpoints.
+3.	Validation Rules
+o	Mandatory fields are tagged required and must be provided; optional fields are tagged optional.
+o	Hierarchical constraints are enforced (e.g., a hall must belong to a valid floor under the same branch).
+o	Input data is validated for type, format, and existence (e.g., floor_manager_id must reference a valid user in the branch).
+4.	Serial Numbering and ID Management
+o	Each entity (branch, floor, hall, section, table) has a globally unique id (auto-incrementing integer in PostgreSQL).
+o	Local sequence fields (e.g., branch_sequence, floor_sequence) reset per parent level (hotel for branch, branch for floor, etc.) to support your numbering scheme:
+	Branches: 1, 2, 3... per hotel (via branch_sequence).
+	Floors: ground, 1, 2, 3... per branch (via floor_sequence).
+	Halls/Sections/Tables: 1, 2, 3, 4 per parent level (via hall_sequence, section_sequence, table_sequence).
+o	Sequence numbering persists after deletes by renumbering remaining items or marking as inactive to avoid gaps, ensuring robustness.
+o	IDs are assigned dynamically by querying the maximum sequence per parent and incrementing (e.g., SELECT COALESCE(MAX(floor_sequence), 0) + 1 FROM floors WHERE branch_id = ?).
+5.	Database Mapping
+o	Tables:
+	hotels: id (PK), name, created_at, updated_at (multi-tenant root).
+	branches: id (PK), hotel_id (FK to hotels), name, address, city, state, pincode, phone, email, manager_name, seating_capacity, operating_hours (jsonb), branch_sequence, created_at, updated_at.
+	floors: id (PK), branch_id (FK to branches), floor_name, floor_number, floor_manager_id (FK to users), floor_sequence, created_at, updated_at.
+	halls: id (PK), floor_id (FK to floors), hall_name, floor_number, hall_type, hall_sequence, created_at, updated_at.
+	sections: id (PK), hall_id (FK to halls), section_name, section_type, section_sequence, created_at, updated_at.
+	tables: id (PK), branch_id (FK to branches), floor_id (FK to floors), hall_id (FK to halls), section_id (FK to sections), table_number, number_of_seats, initial_status, assigned_to (FK to users), table_sequence, created_at, updated_at.
+	users: id (PK), hotel_id (FK to hotels), branch_id (FK to branches), name, email, phone, role_id (FK to roles), created_at, updated_at.
+	roles: id (PK), name, display_name, level, permissions (jsonb), can_create_roles (array), created_at, updated_at.
+o	Relationships: Foreign keys ensure hierarchical integrity (e.g., floor_id links to branches via branch_id).
+o	Indexing: Indexes on hotel_id, branch_id, floor_id, etc., for efficient queries in a multi-tenant setup.
+o	JSONB Usage: operating_hours in branches and permissions in roles use JSONB for flexibility.
+6.	Management Connections
+o	APIs are organized under /api/v1/ prefix, with sub-routes for hotels, branches, floors, etc., managed by FastAPI routers (e.g., branch_router, floor_router).
+o	Hierarchical management is enforced: branches under hotels, floors under branches, halls/sections under floors, tables under any level, with cascading deletes or inactivation as a configurable option.
+o	Table shifting is a dedicated operation to simplify reassignments across floors/halls/sections.
+7.	Scalability and Robustness
+o	Designed for 500–1,000 hotels and 100,000+ users, with optimized DB queries and JWT-based access control.
+o	Handles edge cases (e.g., missing parent IDs, duplicate sequences) with 400/404 errors and logging.
+o	Table shifting updates sequence dynamically to maintain order per new parent.
+________________________________________
+C) Halls
+9.	POST /api/v1/branches/{branch_id}/floors/{floor_id}/halls (Create Hall)
+o	Headers:
+	Authorization: Bearer (required, for Super Admin)
+	Content-Type: application/json (required)
+o	Request Body:
+	hall_name: string (required, hall name)
+	floor_number: string (required, e.g., ground, 1, 2)
+	hall_type: string (required, hall type)
+o	Response: 201 Created, returns { "id": 0, "hall_name": "string", "floor_number": "1", "hall_type": "string", "floor_id": 0, "hall_sequence": 1 }
+o	Notes: hall_sequence increments per floor_id (1 to 4).
+10.	PUT /api/v1/branches/{branch_id}/floors/{floor_id}/halls/{hall_id} (Update Hall)
+o	Headers:
+	Authorization: Bearer (required, for Super Admin)
+	Content-Type: application/json (required)
+o	Request Body:
+	hall_name: string (optional, hall name)
+	floor_number: string (optional, e.g., ground, 1, 2)
+	hall_type: string (optional, hall type)
+o	Response: 200 OK, returns updated hall data
+o	Notes: Maintains hall_sequence, validates floor_id.
+11.	GET /api/v1/branches/{branch_id}/floors/{floor_id}/halls/{hall_id} (Get Hall)
+o	Headers:
+	Authorization: Bearer (required, for Super Admin)
+o	Request Body: None
+o	Response: 200 OK, returns hall data with id, floor_id, and hall_sequence
+o	Notes: Validates hall_id under floor_id.
+12.	DELETE /api/v1/branches/{branch_id}/floors/{floor_id}/halls/{hall_id} (Delete Hall)
+o	Headers:
+	Authorization: Bearer (required, for Super Admin)
+o	Request Body: None
+o	Response: 200 OK, returns { "success": true, "message": "Hall deleted" }
+o	Notes: May cascade or inactivate sections/tables, renumbering hall_sequence if needed.
+________________________________________
+
