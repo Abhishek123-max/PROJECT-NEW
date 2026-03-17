@@ -20,3 +20,5 @@ COPY --from=frontend-build /app/frontend/build ./frontend
 
 EXPOSE 5000
 CMD ["/bin/bash", "-c", ". backend/venv/bin/activate && python backend/app.py"]
+
+
