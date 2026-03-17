@@ -2,10 +2,10 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY Hotel-Management-ui/package*.json ./
 RUN npm install
 
-COPY . .
+COPY Hotel-Management-ui/ .
 
 EXPOSE 4000
 
