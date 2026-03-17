@@ -1,23 +1,21 @@
-# base image
+FROM node:18 AS frontend-build
+WORKDIR /app/frontend
+COPY Hotel-Management-ui/package*.json ./
+RUN npm install
+COPY Hotel-Management-ui/ ./
+RUN npm run build
+
+# Backend image
 FROM python:3.11-slim
-
-# set workdir
 WORKDIR /app
-
-# copy backend
 COPY Backend-repo/ ./backend
-
-# install backend dependencies
 RUN python -m venv venv && \
     . venv/bin/activate && \
     pip install --upgrade pip && \
     pip install -r backend/requirements.txt
 
-# copy frontend build
-COPY Hotel-Management-ui/build ./frontend
+# Copy built frontend
+COPY --from=frontend-build /app/frontend/build ./frontend
 
-# expose port your backend listens on
 EXPOSE 5000
-
-# run backend server
 CMD ["/bin/bash", "-c", ". backend/venv/bin/activate && python backend/app.py"]
