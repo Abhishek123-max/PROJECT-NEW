@@ -1,7 +1,23 @@
-FROM nginx:alpine
+# base image
+FROM python:3.11-slim
 
-COPY Hotel-Management-ui/out /usr/share/nginx/html
+# set workdir
+WORKDIR /app
 
-EXPOSE 80
+# copy backend
+COPY Backend-repo/ ./backend
 
-CMD ["nginx", "-g", "daemon off;"]
+# install backend dependencies
+RUN python -m venv venv && \
+    . venv/bin/activate && \
+    pip install --upgrade pip && \
+    pip install -r backend/requirements.txt
+
+# copy frontend build
+COPY Hotel-Management-ui/build ./frontend
+
+# expose port your backend listens on
+EXPOSE 5000
+
+# run backend server
+CMD ["/bin/bash", "-c", ". backend/venv/bin/activate && python backend/app.py"]
