@@ -1,12 +1,12 @@
-FROM python:3.10
+FROM node:18-alpine
 
 WORKDIR /app
 
-COPY Backend-repo/ .
-COPY Hotel-Management-ui/build /app/static
+COPY package*.json ./
+RUN npm install
 
-RUN pip install -r requirements.txt
+COPY . .
 
 EXPOSE 4000
 
-CMD ["python3", "app.py"]
+CMD ["node", "index.js"]
