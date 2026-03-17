@@ -1,12 +1,7 @@
-FROM python:3.10
+FROM nginx:alpine
 
-WORKDIR /app
+COPY Hotel-Management-ui/out /usr/share/nginx/html
 
-COPY Backend-repo/ .
-COPY Hotel-Management-ui/build /app/static
+EXPOSE 80
 
-RUN pip install -r requirements.txt
-
-EXPOSE 4000
-
-CMD ["python3", "app.py"]
+CMD ["nginx", "-g", "daemon off;"]
